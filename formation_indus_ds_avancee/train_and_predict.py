@@ -17,10 +17,19 @@ def train_model(features: pd.DataFrame, model_registry_folder: str) -> None:
     target = 'Ba_avg'
     X = features.drop(columns=[target])
     y = features[target]
-    with mlflow.start_run():
-        # insert autolog here ...
+    try:
+        experiment_id = mlflow.create_experiment("Engie")
+    except:
+        experiment = mlflow.get_experiment_by_name("Engie")
+        if experiment:
+            experiment_id = experiment.experiment_id
+        else:
+            raise
+    with mlflow.start_run(experiment_id=experiment_id):
+        mlflow.sklearn.autolog()
         model = RandomForestRegressor(n_estimators=1, max_depth=10, n_jobs=1)
         model.fit(X, y)
+        mlflow.sklearn.log_model(model, '', registered_model_name="sk-learn-random-forest-engie")
     time_str = time.strftime('%Y%m%d-%H%M%S')
     joblib.dump(model, os.path.join(model_registry_folder, time_str + '.joblib'))
 
